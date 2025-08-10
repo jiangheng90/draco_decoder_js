@@ -24,9 +24,24 @@
 
             const arrayBuffer = await file.arrayBuffer();
             try {
-                output.textContent = 'Decoding...';
-                const result = await decodeDracoMeshInWorker(new Uint8Array(arrayBuffer), 444232);
-                console.log(result)
+                output.textContent = 'Decoding...\n';
+                const startTime = performance.now();
+                const result = await decodeDracoMeshInWorker(new Uint8Array(arrayBuffer), 444206);
+                const endTime = performance.now();
+                output.textContent += `Decoding took ${(endTime - startTime).toFixed(2)} ms`;
+                const blob = new Blob([result], { type: 'application/octet-stream' });
+
+                // 创建下载链接
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'extracted_model_data.bin'; // 下载文件名
+                document.body.appendChild(a);
+                a.click();
+
+                // 释放 URL 对象
+                URL.revokeObjectURL(url);
+                a.remove();
             } catch (e) {
                 output.textContent = 'Error: ' + e.message;
             }

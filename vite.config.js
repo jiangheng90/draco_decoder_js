@@ -16,6 +16,14 @@ export default {
                 assetFileNames: '[name][extname]', // 保持 wasm 文件名
             },
         },
+        minify: 'terser',
+        terserOptions: {
+            compress: {
+                drop_console: true,
+                drop_debugger: true
+            },
+            mangle: true,
+        },
     },
     plugins: [
         wasm(),

@@ -37,6 +37,8 @@ function align(offset, alignment) {
 export async function parseDracoMesh(data, bufferLength) {
     await getDecoderModule();
 
+    const startTime = performance.now();
+
     const decoder = new decoderModule.Decoder();
     const buffer = new decoderModule.DecoderBuffer();
     buffer.Init(new Int8Array(data), data.length);
@@ -90,10 +92,6 @@ export async function parseDracoMesh(data, bufferLength) {
         }
     };
 
-    // Write index count
-    writeU32(numIndices);
-
-    // Write indices
     const ia = new decoderModule.DracoInt32Array();
     for (let i = 0; i < numFaces; i++) {
         decoder.GetFaceFromMesh(mesh, i, ia);
@@ -105,34 +103,13 @@ export async function parseDracoMesh(data, bufferLength) {
     }
     decoderModule.destroy(ia);
 
-    const indexAlign = useUint16 ? 2 : 4;
-    const alignedOffset = align(offset, indexAlign);
-    for (let pad = offset; pad < alignedOffset; pad++) view.setUint8(pad, 0);
-    offset = alignedOffset;
-
-    writeU32(attrCount);
-
-
     for (let i = 0; i < attrCount; i++) {
         const attr = decoder.GetAttribute(mesh, i);
-        const semanticId = attr.unique_id();
         const type = attr.data_type();
         const dim = attr.num_components();
-        const alignSize = sizeofDataType(type);
 
         const pointCount = numPoints;
         const valueCount = pointCount * dim;
-
-        // Write semantic ID
-        writeU32(semanticId);
-        // Write value count
-        writeU32(valueCount);
-
-        // Align offset before writing attribute data
-        const aligned = align(offset, alignSize);
-        for (let pad = offset; pad < aligned; pad++) view.setUint8(pad, 0);
-        offset = aligned;
-
 
         const typeMap = {
             [decoderModule.DT_FLOAT32]: { arrayType: decoderModule.DracoFloat32Array, fn: 'GetAttributeFloatForAllPoints' },
@@ -161,6 +138,10 @@ export async function parseDracoMesh(data, bufferLength) {
     decoderModule.destroy(mesh);
     decoderModule.destroy(decoder);
     decoderModule.destroy(buffer);
+
+    const endTime = performance.now();
+    console.log(`Decoding took ${(endTime - startTime).toFixed(2)} ms`);
+
 
     return new Uint8Array(outBuffer, 0, offset); // 裁剪有效部分返回
 }
