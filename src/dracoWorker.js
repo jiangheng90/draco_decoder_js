@@ -56,6 +56,8 @@ export async function parseDracoMesh(data, bufferLength) {
         decoderModule.destroy(buffer);
         throw new Error("Draco decoding failed: " + status.error_msg());
     }
+    decoderModule.destroy(buffer);
+
 
     const numFaces = mesh.num_faces();
     const numIndices = numFaces * 3;
@@ -132,12 +134,10 @@ export async function parseDracoMesh(data, bufferLength) {
             decoderModule.destroy(attrArray);
         }
 
-        decoderModule.destroy(attr);
     }
 
     decoderModule.destroy(mesh);
     decoderModule.destroy(decoder);
-    decoderModule.destroy(buffer);
 
     const endTime = performance.now();
     console.log(`Decoding took ${(endTime - startTime).toFixed(2)} ms`);
