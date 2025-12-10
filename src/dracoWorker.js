@@ -106,7 +106,7 @@ export async function parseDracoMesh(data, bufferLength) {
     decoderModule.destroy(ia);
 
     for (let i = 0; i < attrCount; i++) {
-        const attr = decoder.GetAttribute(mesh, i);
+        const attr = decoder.GetAttributeByUniqueId(mesh, i);
         const type = attr.data_type();
         const dim = attr.num_components();
 
