@@ -10,17 +10,33 @@ export function decodeDracoMeshInWorker(view, bufferLength) {
         const id = requestId++;
         callbacks.set(id, { resolve, reject });
 
-        worker.postMessage({ id, view, bufferLength }, [view.buffer]);
+        worker.postMessage({ id, view, bufferLength, withConfig: false }, [view.buffer]);
+    });
+}
+
+export function decodeDracoMeshInWorkerWithConfig(view) {
+    return new Promise((resolve, reject) => {
+        const id = requestId++;
+        callbacks.set(id, { resolve, reject });
+
+        worker.postMessage({ id, view, withConfig: true }, [view.buffer]);
     });
 }
 
 worker.onmessage = (e) => {
-    const { id, success, decoded, error } = e.data;
+    const { id, success, decoded, error, config } = e.data;
     const cb = callbacks.get(id);
     if (!cb) return;
 
-    if (success) cb.resolve(decoded);
-    else cb.reject(error);
+    if (success) {
+        if (config) {
+            cb.resolve({ decoded, config });
+        } else {
+            cb.resolve(decoded);
+        }
+    } else {
+        cb.reject(error);
+    }
 
     callbacks.delete(id);
 };

@@ -13,7 +13,7 @@
     <pre id="output"></pre>
 
     <script type="module">
-        import { decodeDracoMeshInWorker } from './dist/index.es.js';
+        import { decodeDracoMeshInWorker, decodeDracoMeshInWorkerWithConfig } from './dist/index.es.js';
 
         const fileInput = document.getElementById('fileInput');
         const output = document.getElementById('output');
@@ -26,20 +26,28 @@
             try {
                 output.textContent = 'Decoding...\n';
                 const startTime = performance.now();
-                const result = await decodeDracoMeshInWorker(new Uint8Array(arrayBuffer), 444206);
-                const endTime = performance.now();
-                output.textContent += `Decoding took ${(endTime - startTime).toFixed(2)} ms`;
-                const blob = new Blob([result], { type: 'application/octet-stream' });
 
-                // 创建下载链接
+                const { decoded, config } = await decodeDracoMeshInWorkerWithConfig(new Uint8Array(arrayBuffer));
+                const endTime = performance.now();
+
+                output.textContent += `Decoding took ${(endTime - startTime).toFixed(2)} ms\n\n`;
+                output.textContent += `Vertex count: ${config.vertex_count}\n`;
+                output.textContent += `Index count: ${config.index_count}\n`;
+                output.textContent += `Attributes: ${config.attributes.length}\n\n`;
+                output.textContent += `Attributes info:\n`;
+                config.attributes.forEach((attr, i) => {
+                    output.textContent += `  [${i}] unique_id=${attr.unique_id}, data_type=${attr.data_type}, dim=${attr.dim}, length=${attr.length}, offset=${attr.offset}\n`;
+                });
+
+                const blob = new Blob([decoded], { type: 'application/octet-stream' });
+
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = 'extracted_model_data.bin'; // 下载文件名
+                a.download = 'extracted_model_data.bin';
                 document.body.appendChild(a);
                 a.click();
 
-                // 释放 URL 对象
                 URL.revokeObjectURL(url);
                 a.remove();
             } catch (e) {
