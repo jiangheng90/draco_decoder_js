@@ -285,6 +285,7 @@ export async function parseDracoMeshWithConfig(data) {
         vertex_count: numPoints,
         index_count: numIndices,
         index_length: indexLength,
+        buffer_size: totalSize,
         attributes: attributes
     };
 
