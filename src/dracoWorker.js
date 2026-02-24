@@ -37,8 +37,6 @@ function align(offset, alignment) {
 export async function parseDracoMesh(data, bufferLength) {
     await getDecoderModule();
 
-    const startTime = performance.now();
-
     const decoder = new decoderModule.Decoder();
     const buffer = new decoderModule.DecoderBuffer();
     buffer.Init(new Int8Array(data), data.length);
@@ -139,17 +137,13 @@ export async function parseDracoMesh(data, bufferLength) {
     decoderModule.destroy(mesh);
     decoderModule.destroy(decoder);
 
-    const endTime = performance.now();
-    console.log(`Decoding took ${(endTime - startTime).toFixed(2)} ms`);
-
-
     return new Uint8Array(outBuffer, 0, offset); // 裁剪有效部分返回
 }
 
 export async function parseDracoMeshWithConfig(data) {
     await getDecoderModule();
 
-    const startTime = performance.now();
+    // Debug: print enum values
 
     const decoder = new decoderModule.Decoder();
     const buffer = new decoderModule.DecoderBuffer();
@@ -184,10 +178,24 @@ export async function parseDracoMeshWithConfig(data) {
     for (let i = 0; i < attrCount; i++) {
         const attr = decoder.GetAttributeByUniqueId(mesh, i);
         const uniqueId = attr.unique_id();
-        const dataType = attr.data_type();
+        const dracoDataType = attr.data_type();
         const dim = attr.num_components();
 
-        const attrLength = dim * numPoints * sizeofDataType(dataType);
+        // Map Draco DataType to custom enum (same as C++ side)
+        const dataType = (() => {
+            switch (dracoDataType) {
+                case decoderModule.DT_INT8: return 0;
+                case decoderModule.DT_UINT8: return 1;
+                case decoderModule.DT_INT16: return 2;
+                case decoderModule.DT_UINT16: return 3;
+                case decoderModule.DT_INT32: return 4;
+                case decoderModule.DT_UINT32: return 5;
+                case decoderModule.DT_FLOAT32: return 6;
+                default: return 1; // Default to UInt8
+            }
+        })();
+
+        const attrLength = dim * numPoints * sizeofDataType(dracoDataType);
         totalSize += attrLength;
 
         attributes.push({
@@ -277,9 +285,6 @@ export async function parseDracoMeshWithConfig(data) {
 
     decoderModule.destroy(mesh);
     decoderModule.destroy(decoder);
-
-    const endTime = performance.now();
-    console.log(`Decoding took ${(endTime - startTime).toFixed(2)} ms`);
 
     const config = {
         vertex_count: numPoints,
