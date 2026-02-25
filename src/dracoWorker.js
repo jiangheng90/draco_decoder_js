@@ -178,24 +178,10 @@ export async function parseDracoMeshWithConfig(data) {
     for (let i = 0; i < attrCount; i++) {
         const attr = decoder.GetAttributeByUniqueId(mesh, i);
         const uniqueId = attr.unique_id();
-        const dracoDataType = attr.data_type();
+        const dataType = attr.data_type(); // Use Draco native DataType directly
         const dim = attr.num_components();
 
-        // Map Draco DataType to custom enum (same as C++ side)
-        const dataType = (() => {
-            switch (dracoDataType) {
-                case decoderModule.DT_INT8: return 0;
-                case decoderModule.DT_UINT8: return 1;
-                case decoderModule.DT_INT16: return 2;
-                case decoderModule.DT_UINT16: return 3;
-                case decoderModule.DT_INT32: return 4;
-                case decoderModule.DT_UINT32: return 5;
-                case decoderModule.DT_FLOAT32: return 6;
-                default: return 1; // Default to UInt8
-            }
-        })();
-
-        const attrLength = dim * numPoints * sizeofDataType(dracoDataType);
+        const attrLength = dim * numPoints * sizeofDataType(dataType);
         totalSize += attrLength;
 
         attributes.push({
